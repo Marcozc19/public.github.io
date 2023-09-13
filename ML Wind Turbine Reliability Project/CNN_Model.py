@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-机器学习大作业-16组
-成员：贾冕、庄成、李畅
 平台：spyder
 框架：一维卷积神经网络
     model.add(Conv1D(2, 1, input_shape=(20, 1),kernel_initializer='he_normal',padding='same'))
