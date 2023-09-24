@@ -1,0 +1,109 @@
+---
+title: "MVA Project"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+date: '2022-05-14'
+---
+```{r} 
+##读取文档
+Heart1 = read.table("C:/Users/zhuan/Desktop/清华大学/2022春 大三下/多元统计分析/庄成 2019080344 MVA大作业/heart_2020_cleaned.csv", header = T, sep = ",")
+Heart = read.table("C:/Users/zhuan/Desktop/清华大学/2022春 大三下/多元统计分析/庄成 2019080344 MVA大作业/heart_2020_cleaned_processed.csv", header = T, sep = ",")
+Heartstd = scale(Heart[,])
+```
+```{r}
+head(Heartstd)
+```
+
+```{r}
+library(psych)
+p = ncol(Heart); describe(Heart[,c(1:(p-2))])
+```
+```{r}
+##数据集可视化
+library(GGally)
+library(corrgram)
+library(reshape2)
+#cov(Heart[,-1])
+#corrgram(Heart, order=TRUE, main="correlation between Heart Disease Factors", lower.panel=panel.pts, upper.panel = panel.cor)
+melt.data=melt(Heart1)
+ggplot(data = melt.data, aes(x=variable, y=value, fill=variable))+geom_boxplot(alpha = 0.6, outlier.color = "red", outlier.shape = 20, outlier.size = 3)
+```
+
+```{r}
+##未标准化数据
+library(ggplot2)
+Heartpca = prcomp(Heart[,2:18])
+evals <- data.frame(Heartpca$sdev^2)
+names(evals) <-'eigen.vals'
+evals$component.num <- as.integer(seq(nrow(evals)))
+ggplot(evals,aes(x=component.num,y=eigen.vals)) + geom_point()
+```
+```{r}
+Gamma <- Heartpca$rot
+round(Gamma,3)
+```
+```{r}
+summary(Heartpca)
+```
+
+```{r}
+##标准化数据
+Heartstdpca = prcomp(Heartstd[,2:18])
+stdevals <- data.frame(Heartstdpca$sdev^2)
+names(stdevals) <-'eigen.vals'
+stdevals$component.num <- as.integer(seq(nrow(stdevals)))
+library(ggplot2)
+ggplot(stdevals,aes(x=component.num,y=eigen.vals)) + geom_point()
+```
+```{r}
+Gammastd <- Heartstdpca$rot
+round(Gammastd,3)
+```
+```{r}
+summary(Heartstdpca)
+```
+```{r}
+#FA验证
+library(psych)
+fit = principal(Heart[,2:18],nfactors = 5, rotate="varimax")
+#fit = principal(Heart[,2:18],nfactors = 5, rotate="varimax",n.obs = dim(Heart[,2:18]), scores = T, method = 'Bartlett')
+fit
+fa.diagram(fit)
+plot(fit$values, type = "b")
+plot(fit$loadings, type="n")
+text(fit$loadings, labels = names(Heart), cex=.5)
+#fit$scores
+```
+```{r}
+#LDA
+#library(ICSNP)
+library(MASS)
+library(ggplot2)
+#HotellingsT2(Heart[Heart$HeartDisease=='0', c(2:18)], Heart[Heart$HeartDisease=='1', c(2:18)])
+subdata = Heart[,]
+#LDA
+L = lda(HeartDisease~.,subdata);L
+yhat = predict(L, subdata)$class
+subdata$HeartDisease.pred = yhat
+tab = table(true=Heart$HeartDisease, pred = yhat);tab
+aper = sum(tab[row(tab)!=col(tab)])/sum(tab);aper
+#use cross validation
+Lcv = lda(HeartDisease~., subdata, CV = TRUE)
+tabcv = table(pred=Lcv$class, true = Heart$HeartDisease);tabcv
+apercv = sum(tabcv[row(tabcv)!=col(tabcv)])/sum(tabcv);apercv
+```
+
+```{r}
+#logistic模型
+log.fit = glm(HeartDisease~., data=Heart, family = binomial(link=logit))
+summary(log.fit)
+anova(log.fit)
+```
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
