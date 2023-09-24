@@ -1,0 +1,311 @@
+---
+title: "DOEproject"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## data
+
+```{r}
+# 导⼊必要的库
+library(dplyr)
+library(ggplot2)
+library(readxl)
+library(corrplot)
+library(leaps)
+library(agricolae)
+# 读取数据
+data <- read_excel("C:/Users/zhuan/Desktop/清华大学/2023春 大四下/实验设计与分析/大作业/帕金森数据.xlsx")
+# 查看数据的基本信息
+attach(data)
+str(data)
+summary(data)
+```
+
+```{r}
+# 计算每列的缺失值数量
+missing_values <- sapply(data, function(x) sum(is.na(x)))
+# 打印结果
+print(missing_values)
+```
+
+```{r}
+# 计算所有数值变量的相关性
+correlation_matrix <- cor(data %>% select_if(is.numeric))
+correlation_matrix <- round(correlation_matrix, 3)
+# 打印相关性矩阵
+# print(correlation_matrix)
+# 使⽤ corrplot 来可视化相关性矩阵
+corrplot(correlation_matrix, method = "circle")
+```
+
+
+## regression for the 6 methods respectively
+
+### method 1
+```{r}
+## full model
+data1 <- data[method == 1,]
+mod1 = lm(total_UPDRS ~ .- method - motor_UPDRS -`subject#`, data = data1)
+summary(mod1)
+```
+
+```{r}
+## use mallows' Cp criterion to choose model
+predictors1 <- data1[, c(-1,-4,-6,-7)]
+response1 <- data1$total_UPDRS
+leapSet1 <- leaps(x = predictors1, y = response1, nbest = 3)
+leapSet1$which[which.min(leapSet1$Cp),]
+```
+
+```{r}
+selectmod1 <- lm(total_UPDRS ~ age+sex+test_time+`Jitter:DDP`
+                 +`Shimmer:APQ3`+`Shimmer(dB)`+NHR+HNR+RPDE+DFA+PPE, data1)
+anova(selectmod1, mod1)
+
+```
+p-value = 0.8839, which means that we can conclude the two models are the same.
+
+```{r}
+summary(selectmod1)
+```
+$$total\_UPDRS=46.78+0.26subject\#+0.2987age-3.75sex+0.01474test\_time+147.4Jitter:DDP-251.4Shimmer:APQ3+13Shimmer(dB)-37.78NHR-0.5747HNR-8.248RPDE-44.03DFA+13.05PPE$$
+
+```{r}
+## diagnostics
+par(mfrow=c(2,2))
+plot(selectmod1)
+```
+```{r}
+## as.factor(sex) & ANOVA
+data1$sex <- as.factor(data1$sex)
+fselectmod1 <- aov(total_UPDRS ~ age+sex+test_time+`Jitter:DDP`
+                   +`Shimmer:APQ3`+`Shimmer(dB)`+NHR+HNR+RPDE+DFA+PPE, data1)
+summary(fselectmod1)
+```
+```{r}
+## Fisher's LSD
+LSD.test(fselectmod1, "sex", group = F, console = T)
+```
+
+### method 2
+```{r}
+data2 <- data[method == 2,]
+mod2 = lm(total_UPDRS ~ .- method - motor_UPDRS-`subject#`, data = data2)
+summary(mod2)
+```
+
+```{r}
+## choose model
+predictors2 <- data2[, c(-1,-4,-6,-7)]
+response2 <- data2$total_UPDRS
+leapSet2 <- leaps(x = predictors2, y = response2, nbest = 3)
+leapSet2$which[which.min(leapSet2$Cp),]
+```
+
+```{r}
+selectmod2 <- lm(total_UPDRS ~ age+sex+test_time+`Jitter(Abs)`
+                 +`Jitter:RAP`+`Jitter:DDP`+`Shimmer:DDA`+NHR+HNR+DFA+PPE, data2)
+anova(selectmod2, mod2)
+```
+
+```{r}
+summary(selectmod2)
+```
+
+$$total\_UPDRS=43.66+0.2738subject\#+0.3088age-4.736sex+0.01272test\_time-45780Jitter(Abs)+200400Jitter:RAP-6640Jitter:DDP-41.27Shimmer:DDA-18.74NHR-0.6435HNR-39.02DFA+14.16PPE$$
+
+```{r}
+## diagnostics
+par(mfrow=c(2,2))
+plot(selectmod2)
+```
+
+```{r}
+## as.factor(sex)
+data2$sex <- as.factor(data2$sex)
+fselectmod2 <- aov(total_UPDRS ~ age+sex+test_time+`Jitter(Abs)`
+                   +`Jitter:RAP`+`Jitter:DDP`+`Shimmer:DDA`+NHR+HNR+DFA+PPE, data2)
+summary(fselectmod2)
+## Fisher's LSD
+LSD.test(fselectmod2, "sex", group = F, console = T)
+```
+
+### method 3
+```{r}
+data3 <- data[method == 3,]
+mod3 = lm(total_UPDRS ~ .- method - motor_UPDRS-`subject#`, data = data3)
+summary(mod3)
+```
+
+```{r}
+## choose model
+predictors3 <- data3[, c(-1, -4,-6,-7)]
+response3 <- data3$total_UPDRS
+leapSet3 <- leaps(x = predictors3, y = response3, nbest = 3)
+leapSet3$which[which.min(leapSet3$Cp),]
+```
+
+```{r}
+selectmod3 <- lm(total_UPDRS ~ age+sex+test_time+`Jitter(Abs)`
+                 +`Jitter:DDP`+NHR+RPDE+DFA+PPE, data3)
+anova(selectmod3, mod3)
+```
+
+
+```{r}
+summary(selectmod3)
+```
+$$total\_UPDRS=17.79+0.2799subject\#+0.3043age-5.356sex+0.0148test\_time-99630Jitter(Abs)+326.5Jitter:DDP-22.92NHR+9.333RPDE-33.77DFA+24.99PPE$$
+
+```{r}
+## diagnostics
+par(mfrow=c(2,2))
+plot(selectmod3)
+```
+
+```{r}
+## as.factor(sex)
+data3$sex <- as.factor(data3$sex)
+fselectmod3 <- aov(total_UPDRS ~ age+sex+test_time+`Jitter(Abs)`
+                   +`Jitter:DDP`+NHR+RPDE+DFA+PPE, data3)
+summary(fselectmod3)
+## Fisher's LSD
+LSD.test(fselectmod3, "sex", group = F, console = T)
+```
+
+### method 4
+```{r}
+data4 <- data[method == 4,]
+mod4 = lm(total_UPDRS ~ .- method - motor_UPDRS-`subject#`, data = data4)
+summary(mod4)
+```
+
+```{r}
+## choose model
+predictors4 <- data4[, c(-1,-4,-6,-7)]
+response4 <- data4$total_UPDRS
+leapSet4 <- leaps(x = predictors4, y = response4, nbest = 3)
+leapSet4$which[which.min(leapSet4$Cp),]
+```
+
+```{r}
+selectmod4 <- lm(total_UPDRS ~ age+sex+test_time+`Jitter(Abs)`+`Jitter:RAP`+`Jitter:PPQ5`
+                 +`Jitter:DDP`+`Shimmer`+`Shimmer:APQ3`+`Shimmer:DDA`+NHR+HNR+RPDE+DFA, data4)
+anova(selectmod4, mod4)
+```
+
+```{r}
+summary(selectmod4)
+```
+
+$$total\_UPDRS=38.11+0.2578subject\#+0.3021age-5.041sex+0.01692test\_time-51800Jitter(Abs)-187600Jitter:RAP-699.1Jitter:PPQ5+63000Jitter:DDP+197.1Shimmer-182300Shimmer:APQ3+60670Shimmer:DDA-53.37NHR-0.5116HNR+6.995RPDE-40.27DFA$$
+
+```{r}
+## diagnostics
+par(mfrow=c(2,2))
+plot(selectmod4)
+```
+
+```{r}
+## as.factor(sex)
+data4$sex <- as.factor(data4$sex)
+fselectmod4 <- aov(total_UPDRS ~ age+sex+test_time+`Jitter(Abs)`+`Jitter:RAP`+`Jitter:PPQ5`
+                   +`Jitter:DDP`+`Shimmer`+`Shimmer:APQ3`+`Shimmer:DDA`+NHR+HNR+RPDE+DFA, data4)
+summary(fselectmod4)
+## Fisher's LSD
+LSD.test(fselectmod4, "sex", group = F, console = T)
+```
+
+### method 5
+```{r}
+data5 <- data[method == 5,]
+mod5 = lm(total_UPDRS ~ .- method - motor_UPDRS-`subject#`, data = data5)
+summary(mod5)
+```
+
+```{r}
+## choose model
+predictors5 <- data5[, c(-1, -4,-6,-7)]
+response5 <- data5$total_UPDRS
+leapSet5 <- leaps(x = predictors5, y = response5, nbest = 3)
+leapSet5$which[which.min(leapSet5$Cp),]
+```
+
+```{r}
+selectmod5 <- lm(total_UPDRS ~ age+sex+test_time+`Jitter:RAP`
+                 +`Shimmer(dB)`+`Shimmer:DDA`+NHR+HNR+DFA, data5)
+anova(selectmod5, mod5)
+```
+
+```{r}
+summary(selectmod5)
+```
+
+$$total\_UPDRS=45.44+0.2539subject\#+0.3208age-4.49sex+0.01839test\_time+780Jitter:RAP+16.52Shimmer(dB)-115.9Shimmer:DDA-57.48NHR-74.75HNR-40.96DFA$$
+
+```{r}
+## diagnostics
+par(mfrow=c(2,2))
+plot(selectmod5)
+```
+
+```{r}
+## as.factor(sex)
+data5$sex <- as.factor(data5$sex)
+fselectmod5 <- aov(total_UPDRS ~ age+sex+test_time+`Jitter:RAP`
+                   +`Shimmer(dB)`+`Shimmer:DDA`+NHR+HNR+DFA, data5)
+summary(fselectmod5)
+## Fisher's LSD
+LSD.test(fselectmod5, "sex", group = F, console = T)
+```
+
+
+### method 6
+```{r}
+data6 <- data[method == 6,]
+mod6 = lm(total_UPDRS ~ .- method - motor_UPDRS -`subject#`, data = data6)
+summary(mod6)
+```
+
+```{r}
+## choose model
+predictors6 <- data6[, c(-1, -4,-6,-7)]
+response6 <- data6$total_UPDRS
+leapSet6 <- leaps(x = predictors6, y = response6, nbest = 3)
+leapSet6$which[which.min(leapSet6$Cp),]
+```
+
+```{r}
+selectmod6 <- lm(total_UPDRS ~ age+sex+test_time+`Jitter(Abs)`
+                 +`Jitter:PPQ5`+`Jitter:DDP`+`Shimmer:DDA`+HNR+DFA+PPE, data6)
+anova(selectmod6, mod6)
+```
+
+```{r}
+summary(selectmod6)
+```
+
+$$total\_UPDRS=34.40+0.2536subject\#+0.3411age-6.035sex+0.01609test\_time-110600Jitter(Abs)-1103Jitter:PPQ5+711.6Jitter:DDP-39.9Shimmer:DDA-0.6298HNR-28.55DFA+15.03PPE$$
+
+```{r}
+## diagnostics
+par(mfrow=c(2,2))
+plot(selectmod6)
+```
+
+```{r}
+## as.factor(sex)
+data6$sex <- as.factor(data6$sex)
+fselectmod6 <- aov(total_UPDRS ~ age+sex+test_time+`Jitter(Abs)`
+                   +`Jitter:PPQ5`+`Jitter:DDP`+`Shimmer:DDA`+HNR+DFA+PPE, data6)
+summary(fselectmod6)
+## Fisher's LSD
+LSD.test(fselectmod6, "sex", group = F, console = T)
+```
+
+
+
