@@ -19,3 +19,4 @@ Furthermore, referencing the savings method and guided local search algorithm, t
 ![image](https://github.com/Marcozc19/public.github.io/assets/127183986/5d8ca87e-e778-42f3-94da-34e9fad3da95)
 ![image](https://github.com/Marcozc19/public.github.io/assets/127183986/f87f3953-bbcd-43bc-a588-ce3ac5c702d9)
 
+### Please refer to my Final Thesis Paper for more detailed information
